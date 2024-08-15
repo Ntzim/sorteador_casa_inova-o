@@ -17,7 +17,7 @@ def baixar_excel(df, filename):
     return processed_data
 
 # Configuração da aplicação
-st.title("Aplicação de Sorteio por Excel")
+st.title("Sorteio Edital")
 
 # Entrada do título do sorteio
 titulo_sorteio = st.text_input("Digite o título do sorteio")
