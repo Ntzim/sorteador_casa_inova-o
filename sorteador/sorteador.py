@@ -3,6 +3,10 @@ import pandas as pd
 import random
 from io import BytesIO
 
+# Inicializa o DataFrame global no session state
+if 'sorteados_global' not in st.session_state:
+    st.session_state.sorteados_global = pd.DataFrame(columns=['ID', 'Name'])
+
 # Função para realizar sorteio por grupo
 def realizar_sorteio_por_grupo(df, quantidade_por_grupo):
     ganhadores_por_grupo = {}
@@ -79,7 +83,7 @@ curso_selecionado = st.selectbox("Selecione o curso", [
     'Programação de Games | Kids | Tarde',
     'Digital Influencer | Tarde',
     'Introdução à Robótica | Kids | Tarde',
-    'Introdução à Robótica | Teens | Tarde'
+    'Introdução à Robótica | Teens | Tarde',
     'Introdução ao Mundo Digital e Pacote Office | Noite',
     'Marketing Digital | Noite',
 ])
@@ -91,6 +95,8 @@ if uploaded_file is not None:
     # Leitura do arquivo Excel
     df = pd.read_excel(uploaded_file)
     
+    # Filtrando candidatos que já foram sorteados
+    df = df[~df['ID'].isin(st.session_state.sorteados_global['ID'])]
     
     # Mostrar os primeiros registros do arquivo carregado
     st.write(f"Primeiros registros do arquivo ({curso_selecionado}):")
@@ -121,7 +127,10 @@ if uploaded_file is not None:
         if not ganhadores.empty:
             st.write(f"**{curso_selecionado}** - Lista de ganhadores:")
             st.dataframe(ganhadores)
-
+            
+            # Adicionando os sorteados ao DataFrame global
+            st.session_state.sorteados_global = pd.concat([st.session_state.sorteados_global, ganhadores[['ID', 'Name']]])
+            
             # Adicionar botão para baixar o Excel
             excel_data = baixar_excel(ganhadores, 'ganhadores.xlsx')
             st.download_button(
