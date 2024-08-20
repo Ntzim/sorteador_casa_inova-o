@@ -3,12 +3,8 @@ import pandas as pd
 import random
 from io import BytesIO
 
-# Inicializa o DataFrame global no session state
-if 'sorteados_global' not in st.session_state:
-    st.session_state.sorteados_global = pd.DataFrame(columns=['ID', 'Name', 'Curso'])
-
 # Função para realizar sorteio por grupo
-def realizar_sorteio_por_grupo(df, quantidade_por_grupo, curso_selecionado):
+def realizar_sorteio_por_grupo(df, quantidade_por_grupo):
     ganhadores_por_grupo = {}
     
     # Filtra para ampla concorrência
@@ -59,9 +55,7 @@ def realizar_sorteio_por_grupo(df, quantidade_por_grupo, curso_selecionado):
         ganhadores_ampla = df_ampla_concorrencia.sample(n=quantidade_real, random_state=random.randint(0, 10000))
         ganhadores_por_grupo['Ampla Concorrência'] = ganhadores_ampla
     
-    ganhadores = pd.concat(ganhadores_por_grupo.values())
-    ganhadores['Curso'] = curso_selecionado
-    return ganhadores
+    return pd.concat(ganhadores_por_grupo.values())
 
 # Função para baixar o arquivo Excel
 def baixar_excel(df, filename):
@@ -85,7 +79,7 @@ curso_selecionado = st.selectbox("Selecione o curso", [
     'Programação de Games | Kids | Tarde',
     'Digital Influencer | Tarde',
     'Introdução à Robótica | Kids | Tarde',
-    'Introdução à Robótica | Teens | Tarde',
+    'Introdução à Robótica | Teens | Tarde'
     'Introdução ao Mundo Digital e Pacote Office | Noite',
     'Marketing Digital | Noite',
 ])
@@ -97,8 +91,6 @@ if uploaded_file is not None:
     # Leitura do arquivo Excel
     df = pd.read_excel(uploaded_file)
     
-    # Filtrando candidatos que já foram sorteados
-    df = df[~df['ID'].isin(st.session_state.sorteados_global['ID'])]
     
     # Mostrar os primeiros registros do arquivo carregado
     st.write(f"Primeiros registros do arquivo ({curso_selecionado}):")
@@ -108,11 +100,11 @@ if uploaded_file is not None:
     if curso_selecionado in ['Programação de Games | Teens | Tarde','Programação de Games | Teens | Manhã', 'Introdução à Robótica | Teens | Tarde',
                              'Introdução à Robótica | Kids | Tarde']:
         quantidade_por_grupo = {
-            'Ampla Concorrência': 15,
-            'Negro ou Pardo': 3,
-            'Pessoa com deficiência - PCD': 3,
-            'Estudante de escola pública': 3,
-            'Beneficiário Socioassistencial': 3
+            'Ampla Concorrência': 30,
+            'Negro ou Pardo': 6,
+            'Pessoa com deficiência - PCD': 6,
+            'Estudante de escola pública': 6,
+            'Beneficiário Socioassistencial': 6
         }
     else:
         quantidade_por_grupo = {
@@ -125,38 +117,19 @@ if uploaded_file is not None:
 
     # Botão para realizar o sorteio
     if st.button(f"Realizar Sorteio para {curso_selecionado}"):
-        ganhadores = realizar_sorteio_por_grupo(df, quantidade_por_grupo, curso_selecionado)
+        ganhadores = realizar_sorteio_por_grupo(df, quantidade_por_grupo)
         
         if not ganhadores.empty:
             st.write(f"**{curso_selecionado}** - Lista de ganhadores:")
             st.dataframe(ganhadores)
-            
-            # Adicionando os sorteados ao DataFrame global
-            st.session_state.sorteados_global = pd.concat([st.session_state.sorteados_global, ganhadores[['ID', 'Name', 'Curso']]])
-            
-        
 
-            # Adicionar botão para baixar as inscrições dos ganhadores
-            inscricoes_data = baixar_excel(ganhadores[['ID', 'Name', 'Curso']], 'inscricoes_ganhadores.xlsx')
+            # Adicionar botão para baixar o Excel
+            excel_data = baixar_excel(ganhadores, 'ganhadores.xlsx')
             st.download_button(
-                label="Baixar inscrições dos ganhadores",
-                data=inscricoes_data,
-                file_name=f'{curso_selecionado.replace(" | ", "_").replace(" ", "_")}_inscricoes_ganhadores.xlsx',
+                label="Baixar lista de ganhadores",
+                data=excel_data,
+                file_name=f'{curso_selecionado.replace(" | ", "_").replace(" ", "_")}_ganhadores.xlsx',
                 mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             )
         else:
             st.warning("Nenhum ganhador foi selecionado. Verifique se há candidatos nos grupos especificados.")
-
-# Exibir todos os sorteados globais até agora
-if not st.session_state.sorteados_global.empty:
-    st.write("### Ganhadores acumulados até agora:")
-    st.dataframe(st.session_state.sorteados_global)
-
-    # Adicionar botão para baixar todos os ganhadores acumulados
-    todos_ganhadores_excel = baixar_excel(st.session_state.sorteados_global, 'todos_ganhadores.xlsx')
-    st.download_button(
-        label="Baixar todos os ganhadores acumulados",
-        data=todos_ganhadores_excel,
-        file_name='todos_ganhadores_acumulados.xlsx',
-        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    )
