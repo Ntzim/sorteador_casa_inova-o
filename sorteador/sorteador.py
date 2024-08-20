@@ -55,6 +55,14 @@ def realizar_sorteio_por_grupo(df, quantidade_por_grupo):
         ganhadores_ampla = df_ampla_concorrencia.sample(n=quantidade_real, random_state=random.randint(0, 10000))
         ganhadores_por_grupo['Ampla Concorrência'] = ganhadores_ampla
     
+    # Se ainda existirem vagas em aberto, sorteia entre os restantes
+    vagas_em_aberto = sum(quantidade_por_grupo.values()) - sum([len(g) for g in ganhadores_por_grupo.values()])
+    if vagas_em_aberto > 0:
+        candidatos_restantes = df.drop(pd.concat(ganhadores_por_grupo.values()).index)
+        if not candidatos_restantes.empty:
+            ganhadores_aleatorios = candidatos_restantes.sample(n=vagas_em_aberto, random_state=random.randint(0, 10000))
+            ganhadores_por_grupo['Restantes'] = ganhadores_aleatorios
+    
     return pd.concat(ganhadores_por_grupo.values())
 
 # Função para baixar o arquivo Excel
@@ -79,7 +87,7 @@ curso_selecionado = st.selectbox("Selecione o curso", [
     'Programação de Games | Kids | Tarde',
     'Digital Influencer | Tarde',
     'Introdução à Robótica | Kids | Tarde',
-    'Introdução à Robótica | Teens | Tarde'
+    'Introdução à Robótica | Teens | Tarde',
     'Introdução ao Mundo Digital e Pacote Office | Noite',
     'Marketing Digital | Noite',
 ])
@@ -90,7 +98,6 @@ uploaded_file = st.file_uploader("Escolha um arquivo Excel", type=["xlsx", "xls"
 if uploaded_file is not None:
     # Leitura do arquivo Excel
     df = pd.read_excel(uploaded_file)
-    
     
     # Mostrar os primeiros registros do arquivo carregado
     st.write(f"Primeiros registros do arquivo ({curso_selecionado}):")
