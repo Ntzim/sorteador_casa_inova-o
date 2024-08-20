@@ -107,11 +107,11 @@ if uploaded_file is not None:
     if curso_selecionado in ['Programação de Games | Teens | Tarde','Programação de Games | Teens | Manhã', 'Introdução à Robótica | Teens | Tarde',
                              'Introdução à Robótica | Kids | Tarde']:
         quantidade_por_grupo = {
-            'Ampla Concorrência': 30,
-            'Negro ou Pardo': 6,
-            'Pessoa com deficiência - PCD': 6,
-            'Estudante de escola pública': 6,
-            'Beneficiário Socioassistencial': 6
+            'Ampla Concorrência': 15,
+            'Negro ou Pardo': 3,
+            'Pessoa com deficiência - PCD': 3,
+            'Estudante de escola pública': 3,
+            'Beneficiário Socioassistencial': 3
         }
     else:
         quantidade_por_grupo = {
