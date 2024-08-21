@@ -3,8 +3,11 @@ import pandas as pd
 import random
 from io import BytesIO
 
+# Lista global para armazenar todos os sorteados
+sorteados_geral = []
+
 # Função para realizar sorteio por grupo
-def realizar_sorteio_por_grupo(df, quantidade_por_grupo):
+def realizar_sorteio_por_grupo(df, quantidade_por_grupo, curso):
     ganhadores_por_grupo = {}
     
     # Filtra para ampla concorrência
@@ -63,7 +66,13 @@ def realizar_sorteio_por_grupo(df, quantidade_por_grupo):
             ganhadores_aleatorios = candidatos_restantes.sample(n=vagas_em_aberto, random_state=random.randint(0, 10000))
             ganhadores_por_grupo['Restantes'] = ganhadores_aleatorios
     
-    return pd.concat(ganhadores_por_grupo.values())
+    ganhadores_df = pd.concat(ganhadores_por_grupo.values())
+
+    # Adiciona os ganhadores à lista global de sorteados
+    ganhadores_df['Curso'] = curso
+    sorteados_geral.append(ganhadores_df[['Name', 'ID', 'Curso']])
+    
+    return ganhadores_df
 
 # Função para baixar o arquivo Excel
 def baixar_excel(df, filename):
@@ -72,6 +81,13 @@ def baixar_excel(df, filename):
         df.to_excel(writer, index=False, sheet_name='Ganhadores')
     processed_data = output.getvalue()
     return processed_data
+
+# Função para verificar se um candidato já foi sorteado
+def verificar_sorteio(sorteados, candidato_id):
+    for sorteio in sorteados:
+        if candidato_id in sorteio['ID'].values:
+            return True
+    return False
 
 # Configuração da aplicação
 st.title("Sorteio Edital | Casa da Inovação 🏠")
@@ -124,7 +140,7 @@ if uploaded_file is not None:
 
     # Botão para realizar o sorteio
     if st.button(f"Realizar Sorteio para {curso_selecionado}"):
-        ganhadores = realizar_sorteio_por_grupo(df, quantidade_por_grupo)
+        ganhadores = realizar_sorteio_por_grupo(df, quantidade_por_grupo, curso_selecionado)
         
         if not ganhadores.empty:
             st.write(f"**{curso_selecionado}** - Lista de ganhadores:")
@@ -140,3 +156,18 @@ if uploaded_file is not None:
             )
         else:
             st.warning("Nenhum ganhador foi selecionado. Verifique se há candidatos nos grupos especificados.")
+    
+    # Adicionar botão para baixar a lista geral de sorteados
+    if st.button("Baixar lista geral de sorteados"):
+        if sorteados_geral:
+            sorteados_df = pd.concat(sorteados_geral)
+            excel_data = baixar_excel(sorteados_df, 'sorteados_geral.xlsx')
+            st.download_button(
+                label="Baixar lista geral de sorteados",
+                data=excel_data,
+                file_name='sorteados_geral.xlsx',
+                mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+        else:
+            st.warning("Nenhum sorteio foi realizado ainda.")
+
