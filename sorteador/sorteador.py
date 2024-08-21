@@ -3,8 +3,9 @@ import pandas as pd
 import random
 from io import BytesIO
 
-# Lista global para armazenar todos os sorteados
-sorteados_geral = []
+# Inicializar lista global de sorteados na session_state
+if 'sorteados_geral' not in st.session_state:
+    st.session_state.sorteados_geral = []
 
 # Função para realizar sorteio por grupo
 def realizar_sorteio_por_grupo(df, quantidade_por_grupo, curso):
@@ -70,7 +71,7 @@ def realizar_sorteio_por_grupo(df, quantidade_por_grupo, curso):
 
     # Adiciona os ganhadores à lista global de sorteados
     ganhadores_df['Curso'] = curso
-    sorteados_geral.append(ganhadores_df[['Name', 'ID', 'Curso']])
+    st.session_state.sorteados_geral.append(ganhadores_df[['Name', 'ID', 'Curso']])
     
     return ganhadores_df
 
@@ -81,13 +82,6 @@ def baixar_excel(df, filename):
         df.to_excel(writer, index=False, sheet_name='Ganhadores')
     processed_data = output.getvalue()
     return processed_data
-
-# Função para verificar se um candidato já foi sorteado
-def verificar_sorteio(sorteados, candidato_id):
-    for sorteio in sorteados:
-        if candidato_id in sorteio['ID'].values:
-            return True
-    return False
 
 # Configuração da aplicação
 st.title("Sorteio Edital | Casa da Inovação 🏠")
@@ -158,16 +152,15 @@ if uploaded_file is not None:
             st.warning("Nenhum ganhador foi selecionado. Verifique se há candidatos nos grupos especificados.")
     
     # Adicionar botão para baixar a lista geral de sorteados
-    if st.button("Baixar lista geral de sorteados"):
-        if sorteados_geral:
-            sorteados_df = pd.concat(sorteados_geral)
+    if st.button("BAIXAR LISTA DE TODOS OS SORTEADOS"):
+        if st.session_state.sorteados_geral:
+            sorteados_df = pd.concat(st.session_state.sorteados_geral)
             excel_data = baixar_excel(sorteados_df, 'sorteados_geral.xlsx')
             st.download_button(
-                label="Baixar lista geral de sorteados",
+                label="BAIXAR LISTA DE TODOS OS SORTEADOS",
                 data=excel_data,
                 file_name='sorteados_geral.xlsx',
                 mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             )
         else:
             st.warning("Nenhum sorteio foi realizado ainda.")
-
