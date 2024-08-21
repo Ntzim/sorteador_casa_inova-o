@@ -160,7 +160,7 @@ if curso_selecionado == 'Marketing Digital | Noite' :
             st.download_button(
                 label="Baixar lista de todos os sorteados",
                 data=excel_data,
-                file_name='sorteados_geral.xlsx',
+                file_name='Sorteados-Casa-Inovação.xlsx',
                 mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             )
         else:
