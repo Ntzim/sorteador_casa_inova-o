@@ -152,12 +152,13 @@ if uploaded_file is not None:
             st.warning("Nenhum ganhador foi selecionado. Verifique se há candidatos nos grupos especificados.")
     
     # Adicionar botão para baixar a lista geral de sorteados
-    if st.button("BAIXAR LISTA DE TODOS OS SORTEADOS"):
+if curso_selecionado == 'Marketing Digital | Noite' :
+    if st.button("Finalizar Sorteio"):
         if st.session_state.sorteados_geral:
             sorteados_df = pd.concat(st.session_state.sorteados_geral)
             excel_data = baixar_excel(sorteados_df, 'sorteados_geral.xlsx')
             st.download_button(
-                label="BAIXAR LISTA DE TODOS OS SORTEADOS",
+                label="Baixar lista de todos os sorteados",
                 data=excel_data,
                 file_name='sorteados_geral.xlsx',
                 mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
