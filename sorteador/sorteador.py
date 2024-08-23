@@ -5,7 +5,7 @@ from io import BytesIO
 
 # Inicializar lista global de sorteados na session_state
 if 'sorteados_geral' not in st.session_state:
-    st.session_state.sorteados_geral = []
+    st.session_state.sorteados_geral = pd.DataFrame(columns=['Name', 'ID'])
 
 # Função para realizar sorteio por grupo
 def realizar_sorteio_por_grupo(df, quantidade_por_grupo, curso):
@@ -70,8 +70,9 @@ def realizar_sorteio_por_grupo(df, quantidade_por_grupo, curso):
     ganhadores_df = pd.concat(ganhadores_por_grupo.values())
 
     # Adiciona os ganhadores à lista global de sorteados
+    ganhadores_df = ganhadores_df[['Name', 'ID']]
     ganhadores_df['Curso'] = curso
-    st.session_state.sorteados_geral.append(ganhadores_df[['Name', 'ID', 'Curso']])
+    st.session_state.sorteados_geral = pd.concat([st.session_state.sorteados_geral, ganhadores_df[['Name', 'ID']]])
     
     return ganhadores_df
 
@@ -109,19 +110,27 @@ if uploaded_file is not None:
     # Leitura do arquivo Excel
     df = pd.read_excel(uploaded_file)
     
+    # Verifica se algum candidato já foi sorteado
+    candidatos_ja_sorteados = df.merge(st.session_state.sorteados_geral[['Name', 'ID']], on=['Name', 'ID'], how='inner')
+    df = df[~df[['Name', 'ID']].isin(candidatos_ja_sorteados[['Name', 'ID']].to_dict('list')).all(axis=1)]
+    
+    # Exibe aviso se algum candidato foi removido
+    if not candidatos_ja_sorteados.empty:
+        st.warning(f"Os seguintes candidatos já foram sorteados anteriormente e foram removidos deste sorteio:\n{candidatos_ja_sorteados[['Name', 'ID']].to_string(index=False)}")
+    
     # Mostrar os primeiros registros do arquivo carregado
     st.write(f"Primeiros registros do arquivo ({curso_selecionado}):")
     st.dataframe(df.head())
 
     # Definição das quantidades de vagas por grupo
-    if curso_selecionado in ['Programação de Games | Teens | Tarde','Programação de Games | Teens | Manhã', 'Introdução à Robótica | Teens | Tarde',
+    if curso_selecionado in ['Programação de Games | Teens | Tarde', 'Programação de Games | Teens | Manhã', 'Introdução à Robótica | Teens | Tarde',
                              'Introdução à Robótica | Kids | Tarde']:
         quantidade_por_grupo = {
-            'Ampla Concorrência': 15,
-            'Negro ou Pardo': 3,
-            'Pessoa com deficiência - PCD': 3,
-            'Estudante de escola pública': 3,
-            'Beneficiário Socioassistencial': 3
+            'Ampla Concorrência': 30,
+            'Negro ou Pardo': 6,
+            'Pessoa com deficiência - PCD': 6,
+            'Estudante de escola pública': 6,
+            'Beneficiário Socioassistencial': 6
         }
     else:
         quantidade_por_grupo = {
@@ -152,16 +161,12 @@ if uploaded_file is not None:
             st.warning("Nenhum ganhador foi selecionado. Verifique se há candidatos nos grupos especificados.")
     
     # Adicionar botão para baixar a lista geral de sorteados
-if curso_selecionado == 'Marketing Digital | Noite' :
-    if st.button("Finalizar Sorteio"):
-        if st.session_state.sorteados_geral:
-            sorteados_df = pd.concat(st.session_state.sorteados_geral)
-            excel_data = baixar_excel(sorteados_df, 'sorteados_geral.xlsx')
-            st.download_button(
-                label="Baixar lista de todos os sorteados",
-                data=excel_data,
-                file_name='Sorteados-Casa-Inovação.xlsx',
-                mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-            )
-        else:
-            st.warning("Nenhum sorteio foi realizado ainda.")
+if curso_selecionado == 'Marketing Digital | Noite':
+    if st.button("Finalizar Sorteios e Baixar Lista Geral de Sorteados"):
+        excel_data = baixar_excel(st.session_state.sorteados_geral, 'sorteados_geral.xlsx')
+        st.download_button(
+            label="Baixar lista geral de sorteados",
+            data=excel_data,
+            file_name='sorteados_geral.xlsx',
+            mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
